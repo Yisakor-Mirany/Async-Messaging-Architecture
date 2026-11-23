@@ -1,0 +1,29 @@
+{
+  "name": "async-messaging-worker",
+  "version": "1.0.0",
+  "description": "RabbitMQ consumer (report worker) and transactional outbox publisher.",
+  "private": true,
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "start:outbox": "node src/outbox-publisher.js",
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ]
+  },
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.10.9",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

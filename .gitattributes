@@ -1,0 +1,3 @@
+# Keep shell scripts runnable on Windows checkouts (Git Bash / WSL).
+* text=auto
+*.sh text eol=lf

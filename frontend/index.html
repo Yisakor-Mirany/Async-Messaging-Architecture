@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Async Report Jobs</title>
+  <meta name="description" content="Dashboard for an asynchronous report generation system built on RabbitMQ and PostgreSQL.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%233b6fd8'/%3E%3Cpath d='M4 8h8M8 4l4 4-4 4' stroke='white' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div>
+        <h1>Async Report Jobs</h1>
+        <p class="subtitle">REST API &rarr; PostgreSQL outbox &rarr; RabbitMQ &rarr; background worker</p>
+      </div>
+      <div class="health" id="health" aria-live="polite">
+        <span class="dot dot--unknown" id="health-dot"></span>
+        <span id="health-text">Checking API&hellip;</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card" aria-labelledby="submit-heading">
+      <h2 id="submit-heading">Submit a report job</h2>
+      <form id="job-form" novalidate>
+        <div class="grid">
+          <label>Report type
+            <select name="reportType" required>
+              <option value="sales_summary">Sales summary</option>
+              <option value="inventory_snapshot">Inventory snapshot</option>
+              <option value="user_activity">User activity</option>
+              <option value="financial_statement">Financial statement</option>
+            </select>
+          </label>
+          <label>Format
+            <select name="format">
+              <option value="pdf">PDF</option>
+              <option value="csv">CSV</option>
+              <option value="xlsx">XLSX</option>
+            </select>
+          </label>
+          <label>Start date
+            <input type="date" name="startDate" required>
+          </label>
+          <label>End date
+            <input type="date" name="endDate" required>
+          </label>
+          <label>Requested by <span class="muted">(optional)</span>
+            <input type="text" name="requestedBy" maxlength="100" placeholder="e.g. student@example.edu" autocomplete="off">
+          </label>
+          <label>Failure simulation <span class="muted">(demo)</span>
+            <select name="simulate">
+              <option value="none">None &ndash; normal job</option>
+              <option value="fail_then_succeed">Fail once, then succeed (retry)</option>
+              <option value="always_fail">Always fail (exhaust retries &rarr; DLQ)</option>
+            </select>
+          </label>
+        </div>
+        <label class="checkbox"><input type="checkbox" name="includeCharts"> Include charts</label>
+        <div class="actions">
+          <button type="submit" class="btn btn--primary" id="submit-btn">Submit Job</button>
+          <button type="button" class="btn" id="burst-btn">Submit 5 jobs rapidly</button>
+        </div>
+      </form>
+
+      <div id="submit-result" class="result" hidden aria-live="polite"></div>
+      <p id="form-error" class="error-banner" hidden role="alert"></p>
+    </section>
+
+    <section class="card" aria-labelledby="stats-heading">
+      <h2 id="stats-heading">System snapshot</h2>
+      <div class="stats" id="stats">
+        <div class="stat"><span class="stat__label">Queued</span><span class="stat__value" id="stat-queued">&ndash;</span></div>
+        <div class="stat"><span class="stat__label">Processing</span><span class="stat__value" id="stat-processing">&ndash;</span></div>
+        <div class="stat"><span class="stat__label">Completed</span><span class="stat__value" id="stat-completed">&ndash;</span></div>
+        <div class="stat"><span class="stat__label">Failed</span><span class="stat__value" id="stat-failed">&ndash;</span></div>
+        <div class="stat"><span class="stat__label">Outbox pending</span><span class="stat__value" id="stat-outbox">&ndash;</span></div>
+      </div>
+      <p class="muted small">
+        The API answers with <strong>202 Accepted</strong> as soon as the job is stored.
+        Jobs then wait in RabbitMQ (&ldquo;queued&rdquo;) until a worker picks them up.
+        With one worker and prefetch&nbsp;1 they are processed one at a time.
+      </p>
+    </section>
+
+    <section class="card card--wide" aria-labelledby="history-heading">
+      <div class="card__header">
+        <h2 id="history-heading">Job history</h2>
+        <div class="card__tools">
+          <label class="checkbox small"><input type="checkbox" id="auto-refresh" checked> Auto-refresh every 1.5&nbsp;s</label>
+          <span class="muted small" id="last-refresh"></span>
+          <button type="button" class="btn btn--small" id="refresh-btn">Refresh</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="jobs">
+          <thead>
+            <tr>
+              <th scope="col">Job ID</th>
+              <th scope="col">Report</th>
+              <th scope="col">Status</th>
+              <th scope="col">Attempts</th>
+              <th scope="col">Submitted</th>
+              <th scope="col">Queue wait</th>
+              <th scope="col">Processing</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-body">
+            <tr><td colspan="8" class="empty">No jobs yet. Submit one above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    RabbitMQ Management UI: <a href="http://localhost:15672" target="_blank" rel="noopener">http://localhost:15672</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

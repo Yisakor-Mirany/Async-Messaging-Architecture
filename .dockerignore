@@ -1,0 +1,11 @@
+# Keep build contexts small and never copy secrets into images.
+**/node_modules
+**/npm-debug.log*
+**/coverage
+.git
+.github
+.env
+.env.*
+!.env.example
+tests
+*.md

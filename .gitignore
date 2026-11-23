@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Secrets - only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# Logs, coverage, OS and editor files
+npm-debug.log*
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Local QA output
+tests/results/

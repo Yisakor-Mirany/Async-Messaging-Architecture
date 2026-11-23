@@ -1,0 +1,52 @@
+# Continuous integration: unit tests for api/ and worker/, then the full
+# end-to-end QA suite against the Docker Compose stack.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, worker]
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+
+  integration-tests:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Create CI-only .env (throwaway passwords)
+        run: |
+          cp .env.example .env
+          sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=ci-$(openssl rand -hex 12)/" .env
+          sed -i "s/^RABBITMQ_PASSWORD=.*/RABBITMQ_PASSWORD=ci-$(openssl rand -hex 12)/" .env
+      - name: Start the stack
+        run: docker compose up --build -d
+      - name: Run QA suite
+        working-directory: tests
+        run: |
+          npm ci
+          npm test
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
